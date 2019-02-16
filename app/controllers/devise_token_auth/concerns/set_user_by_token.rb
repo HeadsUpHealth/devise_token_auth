@@ -86,10 +86,53 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     end
   end
 
+  def set_user_by_refresh_token(mapping = nil)
+    # determine target authentication class
+    rc = resource_class(mapping)
+
+    # no default user defined
+    return unless rc
+
+    # gets the headers names, which was set in the initialize file
+    uid_name = DeviseTokenAuth.headers_names[:'uid']
+    refresh_token_name = DeviseTokenAuth.headers_names[:'refresh-token']
+    client_name = DeviseTokenAuth.headers_names[:'client']
+
+    # parse header for values necessary for authentication
+    uid              = request.headers[uid_name] || params[uid_name]
+    @refresh_token ||= request.headers[refresh_token_name] || params[refresh_token_name]
+    @client_id     ||= request.headers[client_name] || params[client_name]
+
+    # client_id isn't required, set to 'default' if absent
+    @client_id ||= 'default'
+
+    # mitigate timing attacks by finding by uid instead of auth token
+    user = uid && rc.dta_find_by(uid: uid)
+    scope = rc.to_s.underscore.to_sym
+
+    if user && user.valid_refresh_token?(@refresh_token, @client_id)
+      # sign_in with bypass: true will be deprecated in the next version of Devise
+      if respond_to?(:bypass_sign_in) && DeviseTokenAuth.bypass_sign_in
+        bypass_sign_in(user, scope: scope)
+      else
+        sign_in(scope, user, store: false, event: :fetch, bypass: DeviseTokenAuth.bypass_sign_in)
+      end
+      return @resource = user
+    else
+      # zero all values previously set values
+      @client_id = nil
+      return @resource = nil
+    end
+  end
+
   def update_auth_header
     # cannot save object if model has invalid params
 
     return unless @resource && @client_id
+
+    # To walk around the issue that some users have no first, last, sex, dob fields
+    # TODO: will remove it
+    return unless @resource && (@resource.valid? || @resource.persisted?) && @client_id
 
     # Generate new client_id with existing authentication
     @client_id = nil unless @used_auth_by_token
@@ -99,7 +142,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       # cleared by sign out in the meantime
       return if @resource.reload.tokens[@client_id].nil?
 
-      auth_header = @resource.build_auth_header(@token, @client_id)
+      auth_header = @resource.build_auth_header(@token, @refresh_token, @client_id)
 
       # update the response header
       response.headers.merge!(auth_header)
@@ -147,7 +190,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     # extend expiration of batch buffer to account for the duration of
     # this request
     if @is_batch_request
-      auth_header = @resource.extend_batch_buffer(@token, @client_id)
+      auth_header = @resource.extend_batch_buffer(@token, @refresh_token, @client_id)
 
       # Do not return token for batch requests to avoid invalidated
       # tokens returned to the client in case of race conditions.
@@ -155,6 +198,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       # being passed in a XHR response in case of
       # 304 Not Modified responses.
       auth_header[DeviseTokenAuth.headers_names[:"access-token"]] = ' '
+      auth_header[DeviseTokenAuth.headers_names[:"refresh-token"]] = ' '
       auth_header[DeviseTokenAuth.headers_names[:"expiry"]] = ' '
     else
       # update Authorization response header with new token

@@ -14,9 +14,10 @@ module DeviseTokenAuth
         redirect_url = params[:redirect_url] || DeviseTokenAuth.default_confirm_success_url
 
         if signed_in?(resource_name)
-          client_id, token = signed_in_resource.create_token
+          client_id, token, refresh_token = signed_in_resource.create_token
 
           redirect_headers = build_redirect_headers(token,
+                                                    refresh_token,
                                                     client_id,
                                                     redirect_header_options)
 

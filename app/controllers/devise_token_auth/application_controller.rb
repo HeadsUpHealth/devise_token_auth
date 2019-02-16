@@ -20,9 +20,10 @@ module DeviseTokenAuth
       DeviseTokenAuth.redirect_whitelist && !DeviseTokenAuth::Url.whitelisted?(@redirect_url)
     end
 
-    def build_redirect_headers(access_token, client, redirect_header_options = {})
+    def build_redirect_headers(access_token, refresh_token, client, redirect_header_options = {})
       {
         DeviseTokenAuth.headers_names[:"access-token"] => access_token,
+        DeviseTokenAuth.headers_names[:"refresh-token"] => refresh_token,
         DeviseTokenAuth.headers_names[:"client"] => client,
         :config => params[:config],
 

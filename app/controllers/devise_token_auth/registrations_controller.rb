@@ -52,7 +52,7 @@ module DeviseTokenAuth
 
         if active_for_authentication?
           # email auth has been bypassed, authenticate user
-          @client_id, @token = @resource.create_token
+          @client_id, @token, @refresh_token = @resource.create_token
           @resource.save!
           update_auth_header
         end

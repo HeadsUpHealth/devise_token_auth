@@ -39,7 +39,7 @@ module DeviseTokenAuth
       @resource = resource_class.with_reset_password_token(resource_params[:reset_password_token])
 
       if @resource && @resource.reset_password_period_valid?
-        client_id, token = @resource.create_token
+        client_id, token, refresh_token = @resource.create_token
 
         # ensure that user is confirmed
         @resource.skip_confirmation! if confirmable_enabled? && !@resource.confirmed_at
@@ -53,6 +53,7 @@ module DeviseTokenAuth
 
         redirect_header_options = { reset_password: true }
         redirect_headers = build_redirect_headers(token,
+                                                  refresh_token,
                                                   client_id,
                                                   redirect_header_options)
         redirect_to(@resource.build_auth_url(@redirect_url,

@@ -183,7 +183,7 @@ module DeviseTokenAuth
 
     def set_token_on_resource
       @config = omniauth_params['config_name']
-      @client_id, @token, @expiry = @resource.create_token
+      @client_id, @token, @refresh_token, @expiry = @resource.create_token
     end
 
     def render_data(message, data)
