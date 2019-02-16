@@ -210,7 +210,7 @@ module DeviseTokenAuth::Concerns::User
     DeviseTokenAuth::Url.generate(base_url, args)
   end
 
-  def extend_batch_buffer(token, refresh_token client_id)
+  def extend_batch_buffer(token, refresh_token, client_id)
     tokens[client_id]['updated_at'] = Time.zone.now
     update_auth_header(token, refresh_token, client_id)
   end
