@@ -26,7 +26,7 @@ module DeviseTokenAuth
 
         redirect_to(redirect_to_link)
       else
-        raise ActionController::RoutingError, 'Not Found'
+        render_token_error
       end
     end
 
@@ -66,6 +66,10 @@ module DeviseTokenAuth
       else
         render_error(404, I18n.t('devise_token_auth.confirmations.user_not_found', email: @email))
       end
+    end
+
+    def render_token_error
+      render_error(401, @resource.errors.full_messages)
     end
 
     private
