@@ -95,7 +95,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
   def set_user_by_refresh_token
     # determine target authentication class
-    rc = Auth
+    rc = AuthUser
 
     uid_name = DeviseTokenAuth.headers_names[:'uid']
     refresh_token_name = DeviseTokenAuth.headers_names[:'refresh-token']
