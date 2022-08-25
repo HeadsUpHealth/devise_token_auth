@@ -93,7 +93,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     end
   end
 
-  def set_user_by_refresh_token(mapping = nil)
+  def set_user_by_refresh_token(mapping = AuthUser)
     # determine target authentication class
     rc = resource_class(mapping)
 
@@ -114,7 +114,8 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     @token.client ||= 'default'
 
     # mitigate timing attacks by finding by uid instead of auth token
-    user = uid && rc.find_by(uid: uid)
+    auth_user = uid && rc.find_by(uid: uid)  
+    user = auth_user.principal_user_account if auth_user
 
     if user && user.valid_refresh_token?(@token.refresh_token, @token.client)
       # sign_in with bypass: true will be deprecated in the next version of Devise
