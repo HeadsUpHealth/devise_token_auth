@@ -202,7 +202,7 @@ module DeviseTokenAuth::Concerns::User
       updated_at: now
     )
 
-    update_auth_header(token.token, token.client, token.refresh_token)
+    update_auth_headers(token.token, token.client, token.refresh_token)
   end
 
   def build_auth_headers(token, client = 'default', refresh_token = nil)
